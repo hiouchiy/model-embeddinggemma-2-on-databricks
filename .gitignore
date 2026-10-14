@@ -1,0 +1,25 @@
+# Generated embeddings / media (regenerate with the tools; never commit)
+outputs/
+*.parquet
+*.wav
+*.mp3
+*.mp4
+*.png
+*.jpg
+
+# Local-only
+archive/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# databricks sync state
+.databricks/

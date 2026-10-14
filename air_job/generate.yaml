@@ -1,0 +1,53 @@
+# AI Runtime CLI spec — EmbeddingGemma 2 batch embedding on a single A10.
+#
+# Run it with:
+#   COPYFILE_DISABLE=1 air run --file air_job/generate.yaml --watch --profile <PROFILE>
+#
+# The runtime is installed by scripts/install.sh inside `command:` (not environment.dependencies), the same
+# recipe the notebook uses. The Parquet is written to local disk and then copied to a UC Volume.
+
+experiment_name: embeddinggemma2_generate
+mlflow_run_name: embeddinggemma2_a10
+
+environment:
+  version: "4"          # Python 3.12; torch 2.10/cu128 replaces the preinstalled torch
+  dependencies:         # the runtime comes from scripts/install.sh; AIR requires a non-empty list here
+    - "pyarrow"
+
+env_variables:
+  # AIR presets HF_HUB_ENABLE_HF_TRANSFER=1 but does not install hf_transfer.
+  HF_HUB_ENABLE_HF_TRANSFER: "0"
+
+compute:
+  num_accelerators: 1
+  accelerator_type: GPU_1xA10
+
+code_source:
+  type: snapshot
+  snapshot:
+    root_path: ..        # -> /databricks/code_source/model-embeddinggemma-2-on-databricks
+
+max_retries: 0
+timeout_minutes: 60
+
+command: |
+  set -euo pipefail
+  # >>> EDIT: the UC Volume the embeddings are copied to. Create it first:
+  #     /Volumes/<CATALOG>/<SCHEMA>/<VOLUME>  (see README "Prerequisites and configuration").
+  DEST="/Volumes/main/default/embeddings/embeddinggemma2"
+
+  echo "[air] ===== GPU ====="; nvidia-smi || true
+  cd "$CODE_SOURCE_PATH"
+  export HF_HOME=/tmp/hf_home
+  echo "[air] ===== install (scripts/install.sh) ====="
+  bash scripts/install.sh
+
+  echo "[air] ===== embed ====="
+  # Lines may point at media on a Volume: {"id": ..., "params": {"image_path": "/Volumes/.../a.jpg"}}.
+  python generate.py --input examples/corpus.jsonl --out /tmp/embeddinggemma2_out/corpus.parquet \
+    --query "How can I make the vectors smaller?" --query-prompt SearchQuery
+
+  echo "[air] ===== copy to UC Volume ====="
+  mkdir -p "$DEST"
+  cp /tmp/embeddinggemma2_out/* "$DEST/"
+  echo "[air] ===== done ====="; ls -la "$DEST"

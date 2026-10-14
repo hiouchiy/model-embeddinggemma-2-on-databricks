@@ -1,0 +1,10 @@
+{"id": "mrl-en", "text": "Matryoshka embeddings can be truncated to 512, 256 or 128 dimensions and re-normalised, cutting vector storage by up to six times.", "params": {"title": "Matryoshka embeddings"}}
+{"id": "mrl-ja", "text": "マトリョーシカ表現学習で作った埋め込みは、先頭の次元だけを残して短くしても検索の精度があまり落ちない。", "params": {"title": "ベクトルの圧縮"}}
+{"id": "vs-en", "text": "Databricks Vector Search keeps an index in sync with a Delta table and serves similarity queries over it.", "params": {"title": "Vector Search"}}
+{"id": "serving-ja", "text": "Model Serving のエンドポイントは、使われていないときにゼロまでスケールダウンでき、最初のリクエストで起動する。", "params": {"title": "Model Serving"}}
+{"id": "aurora-en", "text": "The northern lights are caused by charged particles from the sun colliding with gases in the upper atmosphere.", "params": {"prompt_name": "Document"}}
+{"id": "aurora-ja", "text": "オーロラは、太陽から飛んできた荷電粒子が大気中の酸素や窒素とぶつかって光る現象です。", "params": {"prompt_name": "Document"}}
+{"id": "curry-ja", "text": "今日の昼ごはんは、駅前の店のカツカレーでした。", "params": {"prompt_name": "Document"}}
+{"id": "code-py", "text": "def l2_normalize(v):\n    n = (v * v).sum() ** 0.5\n    return v / n if n else v", "params": {"title": "normalize.py"}}
+{"id": "fp16-en", "text": "Run the model in bfloat16 or float32. In float16 its activations overflow and the embeddings come back as NaN.", "params": {"title": "Numerical precision"}}
+{"id": "tokens-ja", "text": "画像は 1 枚あたり 280 トークン、音声は 1 秒あたり 25 トークン、動画は 1 フレームあたり 140 トークンを使う。", "params": {"title": "コンテキストの使い方"}}
