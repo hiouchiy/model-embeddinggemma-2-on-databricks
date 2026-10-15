@@ -190,16 +190,32 @@ call the REST API with a 600–900 s timeout.
 
 ## Measured results
 
-Not yet measured on Databricks: the three ways have not been run on serverless GPU / Model Serving yet. What has been
-checked (2026-10-14, locally on an Apple-silicon Mac CPU, fp32, with the pinned versions):
+1× A10G, bf16, `modalities=all` (2026-10-15, workspace `fevm-lxejgv`):
 
 | | |
 |---|---|
-| `Embedder` | every input kind (text, image, text + image, two images, audio, video, text + video), 256-d truncation, `processing_kwargs`, `__list_params__` and three bad rows: all as expected; vectors unit length |
-| Retrieval sanity | "What causes the northern lights?" → English doc 0.871, Japanese doc 0.710, unrelated (curry) 0.544. "a red circle" → red-circle image 0.758, blue-circle image 0.684 |
-| Vision budget | the same image at 70 vs 280 tokens: cosine 0.985 |
-| PyFunc | `mlflow.pyfunc.log_model` → `load_model` → `predict`: signature `text`, `params_json` → `embedding: Array(double)`, ... |
-| `notebooks/*`, `generate.py` | run locally with `dbutils` stubbed (install cell skipped), `all` and `text` |
+| `notebooks/test_serving_model` (job) | all 8 input rows OK (text, 256-d, image, text + image, audio, video), bad rows reported; ≈ 7.9 min including the install. GPU memory peak 1.74 GiB |
+| Registration job (env_pack) | ≈ 8.9 min. Smoke: query~doc 0.871, peak 1.41 GiB |
+| Endpoint creation → READY | 394 s (`GPU_MEDIUM`, Small) |
+| Endpoint, warm | 1 text row 0.24–0.32 s, 64 text rows 0.54 s, 1 image 0.32 s, 1 video (3 s) 0.41 s, round trip from a laptop in Japan |
+| Endpoint, first call | 10 rows of every kind in 3.0 s |
+| Retrieval sanity (endpoint) | "a red circle" → text "A red ball…" 0.814, text + red-circle image 0.818, red-circle image 0.757, red video 0.696, blue-circle image 0.684, tone 0.640, unrelated text 0.654 |
+| bf16 vs fp32 | cosine 0.99998 on the same text (CPU) |
+
+Cold start from scale-to-zero has not been measured yet. Locally (Apple-silicon CPU, fp32) the same checks pass, and
+an image at 70 vs 280 vision tokens gives cosine 0.985.
+
+### Why a custom PyFunc, not an MLflow flavor
+
+- **`mlflow.transformers`:** its `feature-extraction` pipeline returns token states. The mean pooling, the 512→768
+  projection, the normalisation, the prompts and the media inputs would all be left to the caller.
+- **`mlflow.sentence_transformers`:** it logs this model fine (tried with MLflow 3.12; weights bundled, 548 MB text-only).
+  But its input is strings only, so **no images, video or audio**. Its signature has no params, so `prompt_name` /
+  `truncate_dim` cannot be passed, and one bad row fails the whole request. With `task="llm/v1/embeddings"`, the
+  loaded pyfunc still had `task=None` locally and returned bare arrays.
+
+The PyFunc keeps the multimodal input and the same `text` + `params_json` contract as the other
+`model-*-on-databricks` repos.
 
 ## Troubleshooting
 

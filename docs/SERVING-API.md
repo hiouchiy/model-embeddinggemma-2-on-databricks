@@ -137,13 +137,17 @@ scores = [sum(a * b for a, b in zip(q, d)) for d in docs]
 
 ## 4. Performance and limits
 
+- **Measured** (A10, warm, 2026-10-15): 1 text row 0.24–0.32 s round trip, 64 text rows 0.54 s, 1 image 0.32 s, a 3 s
+  video 0.41 s. GPU memory peak ≈ 1.4–1.7 GiB.
+
 - **Context:** 8,192 tokens per row, shared by all modalities: ≈ 29 images, ≈ 58 video frames or ≈ 327 s of audio at
   the defaults.
 - **Request size:** media travel as base64 in the JSON body, which Model Serving caps (16 MB per request at the time of
   writing). Send large videos one per request, or embed them with the notebook / AIR job from a Volume (`video_path`).
 - **Scores across modalities:** a text query scores text documents higher than media. In the local test (query
   "a red circle"), the red-circle image scored 0.758, below the *blue*-circle text "青い円が描かれた紙。" at 0.776, though
-  above the blue-circle image (0.684). Rank within one modality, or calibrate thresholds per modality.
+  above the blue-circle image (0.684); the endpoint gives the same (0.757 / 0.684). Rank within one modality, or
+  calibrate thresholds per modality.
 - **Weights:** downloaded from the HF Hub at load, so the serving environment needs outbound access.
 
 ## 5. Re-registering
