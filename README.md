@@ -194,6 +194,8 @@ call the REST API with a 600–900 s timeout.
 
 | | |
 |---|---|
+| 1. `notebooks/generate` (job) | 5 corpus lines + 4 media files read from a Volume `media_dir` (2 images, audio, video), ranked against "a red circle"; ≈ 7.3 min including the install. Peak 1.82 GiB |
+| 2. AIR batch (`air run`) | `examples/corpus.jsonl` (10 lines, 0.43 s) and a JSONL of `*_path` media on a Volume (6 rows: image, audio, video, text; 1.56 s), Parquet copied to the Volume; ≈ 5.2 min including the install. Peak 1.69 GiB |
 | `notebooks/test_serving_model` (job) | all 8 input rows OK (text, 256-d, image, text + image, audio, video), bad rows reported; ≈ 7.9 min including the install. GPU memory peak 1.74 GiB |
 | Registration job (env_pack) | ≈ 8.9 min. Smoke: query~doc 0.871, peak 1.41 GiB |
 | Endpoint creation → READY | 394 s (`GPU_MEDIUM`, Small) |
