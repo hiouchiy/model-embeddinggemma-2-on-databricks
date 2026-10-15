@@ -200,7 +200,7 @@ call the REST API with a 600–900 s timeout.
 | `notebooks/test_serving_model` (job) | all 8 input rows OK (text, 256-d, image, text + image, audio, video), bad rows reported; ≈ 7.9 min including the install. GPU memory peak 1.74 GiB |
 | Registration job (env_pack) | ≈ 8.9 min. Smoke: query~doc 0.871, peak 1.41 GiB |
 | Endpoint creation → READY | 394 s (`GPU_MEDIUM`, Small) |
-| Endpoint, warm | 1 text row 0.24–0.32 s, 64 text rows 0.54 s, 1 image 0.32 s, 1 video (3 s) 0.41 s, round trip from a laptop in Japan |
+| Endpoint, warm | 1 text row 0.24–0.32 s, 64 text rows 0.54 s, 1 image 0.32 s, 1 video (3 s) 0.41 s, round trip from a laptop |
 | Endpoint, first call | 10 rows of every kind in 3.0 s |
 | Retrieval sanity (endpoint) | "a red circle" → text "A red ball…" 0.814, text + red-circle image 0.818, red-circle image 0.757, red video 0.696, blue-circle image 0.684, tone 0.640, unrelated text 0.654 |
 | bf16 vs fp32 | cosine 0.99998 on the same text (CPU) |
