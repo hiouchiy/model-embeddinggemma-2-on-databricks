@@ -62,7 +62,8 @@ for name, r in res.items():
         continue
     assert r["error"] == "", (name, r["error"])
     want = 256 if name == "dim256" else 768
-    assert r["dim"] == want and abs(np.linalg.norm(r["embedding"]) - 1) < 1e-3, (name, r["dim"])
+    norm = float(np.linalg.norm(r["embedding"]))
+    assert r["dim"] == want and abs(norm - 1) < 1e-3, (name, r["dim"], norm, r["embedding"][:4])
     assert not np.isnan(r["embedding"]).any(), name
 assert res["bad_dim"]["error"] and res["bad_image"]["error"] and len(res["bad_image"]["embedding"]) == 0
 assert set(json.loads(res["list_params"]["messages"])["inputs"]) == set(inputs)

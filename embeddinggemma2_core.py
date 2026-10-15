@@ -241,10 +241,13 @@ class Embedder:
         truncate_dim, normalize, pk = key
         t0 = time.perf_counter()
         with torch.inference_mode():
-            emb = self._st.encode(inputs, truncate_dim=truncate_dim, normalize_embeddings=normalize,
-                                  convert_to_numpy=True, show_progress_bar=False,
+            emb = self._st.encode(inputs, normalize_embeddings=False, convert_to_tensor=True, show_progress_bar=False,
                                   **({"processing_kwargs": json.loads(pk)} if pk else {}))
-        return [[float(x) for x in e] for e in emb], time.perf_counter() - t0
+            # Truncate and re-normalise in fp32: in bf16 the unit length is only good to ~1e-2.
+            emb = emb.float()[:, :truncate_dim]
+            if normalize:
+                emb = torch.nn.functional.normalize(emb, dim=-1)
+        return emb.cpu().tolist(), time.perf_counter() - t0
 
     def handle_rows(self, rows: list[tuple[Any, Any]]) -> list[dict]:
         """(text, params_json) request rows -> response rows, in order. Errors come back in each row's `error`.
