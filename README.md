@@ -95,6 +95,7 @@ air_job/generate.yaml            way 2;  generate.py is the CLI it runs
 serving/embeddinggemma2_pyfunc.py  the MLflow PyFunc (models-from-code): the whole API
 examples/corpus.jsonl            sample corpus (Japanese / English / code)
 docs/SERVING-API.md              endpoint API (single source)
+docs/REPORT.md                   build report: pitfalls, design decisions, open items
 ```
 
 ## 1. Notebook on serverless GPU
@@ -207,17 +208,9 @@ call the REST API with a 600–900 s timeout.
 Cold start from scale-to-zero has not been measured yet. Locally (Apple-silicon CPU, fp32) the same checks pass, and
 an image at 70 vs 280 vision tokens gives cosine 0.985.
 
-### Why a custom PyFunc, not an MLflow flavor
-
-- **`mlflow.transformers`:** its `feature-extraction` pipeline returns token states. The mean pooling, the 512→768
-  projection, the normalisation, the prompts and the media inputs would all be left to the caller.
-- **`mlflow.sentence_transformers`:** it logs this model fine (tried with MLflow 3.12; weights bundled, 548 MB text-only).
-  But its input is strings only, so **no images, video or audio**. Its signature has no params, so `prompt_name` /
-  `truncate_dim` cannot be passed, and one bad row fails the whole request. With `task="llm/v1/embeddings"`, the
-  loaded pyfunc still had `task=None` locally and returned bare arrays.
-
-The PyFunc keeps the multimodal input and the same `text` + `params_json` contract as the other
-`model-*-on-databricks` repos.
+What went wrong while building this, the design decisions (why a custom PyFunc rather than an MLflow flavor, why
+video is decoded in the core, why vectors are normalised in fp32) and the open items:
+[docs/REPORT.md](docs/REPORT.md).
 
 ## Troubleshooting
 
@@ -225,6 +218,7 @@ The PyFunc keeps the multimodal input and the same `text` + `params_json` contra
 |---|---|
 | `model type embedding_gemma2 ... not recognized` | transformers older than 5.19.0 (5.18.0 does not have it). It is pinned in `embeddinggemma2_core.RUNTIME_REQUIREMENTS`; rerun `scripts/install.sh`. |
 | Several images or texts in one input come out in the wrong order | sentence-transformers older than 6.1.0 (the model's own requirement). Pinned. |
+| Vector norms 1.002 / 0.998 instead of 1 | bf16 normalisation. `Embedder` truncates and normalises in fp32 ([docs/REPORT.md](docs/REPORT.md) §3); this only happens if you call sentence-transformers directly with `normalize_embeddings=True` in bf16. |
 | NaN or nonsense embeddings | float16. The model's activations overflow it. Use bf16 (GPU default here) or fp32; `Embedder` refuses anything else. |
 | `TypeError: open() got an unexpected keyword argument 'metadata_errors'` on video | transformers' path-based video loading fell back to torchvision, which breaks with newer PyAV. `Embedder` decodes video itself (`decode_video`), so this only happens if you pass a video path to sentence-transformers directly. |
 | `... input needs an encoder this model was loaded without` | The endpoint / notebook loaded a smaller `modalities` set. Use `all` (or the matching set). |
